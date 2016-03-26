@@ -14,43 +14,47 @@ interface CheckOperation {
     boolean operation(Object a);
 }
 
+class ValueCheckException extends Exception {};
+
 public class Player {
-    final String[] sLongParamNames_ = {"yearOfBirth", "id"};
-    final static CheckOperation[] longCheckOperations_ = {(par) -> (Long)par>1900 && (Long)par<2016, (par) -> true};
+    final static String[] sLongParamNames_ = {"yearOfBirth", "id"};
+    final static CheckOperation[] longCheckOperations_ = {(par) -> (Long)par>1900 && (Long)par<2116, (par) -> true};
     Map<String, Long> longData_;
-    final String[] sDoubleParamNames_ = {"weight", "height"};
+    final static String[] sDoubleParamNames_ = {"weight", "height"};
     final static CheckOperation[] doubleCheckOperations_ = {(par) -> (Double)par>8. && (Double)par<4086., (par) -> (Double)par>8. && (Double)par<380.};
     Map<String, Double> doubleData_;
-    final String[] sSParamNames_ = {"dateOfBirth", "lastName", "playerPosition", "playerGameStatus", "firstName"};
+    final static String[] sSParamNames_ = {"dateOfBirth", "lastName", "playerPosition", "playerGameStatus", "firstName"};
+    final static CheckOperation[] sCheckOperations_ = {(par) -> ((String)par).length()>8 && ((String)par).length()<12, (par) -> true, (par) -> true, (par) -> true, (par) -> true};
     Map<String, String> sData_;
     boolean bCheck = false;
 
-    public Player(JSONObject rec) {
-        longData_ = new HashMap<>();
+    <T> void put_and_check(final String[] asParamNames, final CheckOperation[] aCheckOperations, Map<String, T> aData, JSONObject rec) throws ValueCheckException {
+        T par;
         int index = 0;
-        Long pa = 0L;
+        for (String si : asParamNames) {
+            par = (T) rec.get(si);
+            if (!aCheckOperations[index++].operation(par)) {
+                throw new ValueCheckException();
+            }
+            aData.put(si, par);
+        }
+    }
+
+    public Player(JSONObject rec) {
         bCheck = true;
         try {
-            for (String si : sLongParamNames_) {
-                pa = (Long) rec.get(si);
-                if (!longCheckOperations_[index++].operation(pa)) {
-                    bCheck = false;
-                    break;
-                }
-                longData_.put(si, pa);
-            }
-            if (bCheck) {
-                doubleData_ = new HashMap<>();
-                for (String si : sDoubleParamNames_) {
-                    doubleData_.put(si, (Double) rec.get(si));
-                }
-                sData_ = new HashMap<>();
-                for (String si : sSParamNames_) {
-                    sData_.put(si, (String) rec.get(si));
-                }
-            }
+            longData_ = new HashMap<>();
+            put_and_check(sLongParamNames_,longCheckOperations_,longData_, rec);
+            doubleData_ = new HashMap<>();
+            put_and_check(sDoubleParamNames_,doubleCheckOperations_,doubleData_, rec);
+            sData_ = new HashMap<>();
+            put_and_check(sSParamNames_,sCheckOperations_,sData_, rec);
         }
         catch (ClassCastException e) {
+            e.printStackTrace();
+            bCheck = false;
+        } catch (ValueCheckException e) {
+            e.printStackTrace();
             bCheck = false;
         }
 
