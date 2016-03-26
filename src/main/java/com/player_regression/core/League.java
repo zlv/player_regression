@@ -2,6 +2,7 @@ package com.player_regression.core;
 import com.mongodb.DBCollection;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
+import com.mongodb.WriteResult;
 import com.mongodb.client.model.UpdateOptions;
 import org.bson.BsonString;
 import org.json.simple.JSONArray;
@@ -38,9 +39,10 @@ public class League {
         document.put("name", name_);
         document.put("siteid", siteid_);
         tableLeagues.update(query, document, true, false);
+        Object leagueId = tableLeagues.findOne(query).get("_id");
 
         JSONParser parser = new JSONParser();
-        final int iLimit = 10;
+        final int iLimit = 3;
         int iOffset = 0;
 
         String sUrl = String.format("http://api.eliteprospects.com:80/beta/leagues/%d/players?limit=%d&offset=%d",siteid_,iLimit,iOffset);
@@ -88,7 +90,8 @@ public class League {
                         "height": 180,
                         "firstName": "Konstantin"*/
                 JSONObject rec = (JSONObject) recobj;
-                String v = (String)rec.get("name");
+                Player player = new Player(rec);
+                player.parse(tablePlayers,leagueId);
                 /*League league = new League(v,id);
                 league.parse(tableLeagues,tablePlayers);
                 System.out.println(v);*/
