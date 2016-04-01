@@ -2,78 +2,87 @@ package com.player_regression.core;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.UpdateOptions;
+import org.bson.Document;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+
+import static com.mongodb.client.model.Filters.eq;
 
 /**
  * Created by zlv on 16.03.16.
  */
-interface CheckOperation {
-    boolean operation(Object a);
+
+class ValueCheckException  extends Exception {
+    NameAndDBName si_;
+    String spar_;
+
+    public <T> ValueCheckException() {
+    }
+
+    public <T> ValueCheckException(NameAndDBName si, T par) {
+        si_ = si;
+        if (par!=null)
+            spar_ = par.toString();
+    }
+
+    public void print_info() {
+        System.out.println("parameter name: " + si_.toString());
+        System.out.println("parameter value: " + spar_);
+    }
 }
 
-class ValueCheckException extends Exception {};
+class Player extends ParserWithDataLists {
 
-public class Player {
-    final static String[] sLongParamNames_ = {"yearOfBirth", "id"};
-    final static CheckOperation[] longCheckOperations_ = {(par) -> (Long)par>1900 && (Long)par<2116, (par) -> true};
-    Map<String, Long> longData_;
-    final static String[] sDoubleParamNames_ = {"weight", "height"};
-    final static CheckOperation[] doubleCheckOperations_ = {(par) -> (Double)par>8. && (Double)par<4086., (par) -> (Double)par>8. && (Double)par<380.};
-    Map<String, Double> doubleData_;
-    final static String[] sSParamNames_ = {"dateOfBirth", "lastName", "playerPosition", "playerGameStatus", "firstName"};
-    final static CheckOperation[] sCheckOperations_ = {(par) -> ((String)par).length()>8 && ((String)par).length()<12, (par) -> true, (par) -> true, (par) -> true, (par) -> true};
-    Map<String, String> sData_;
-    boolean bCheck = false;
-
-    <T> void put_and_check(final String[] asParamNames, final CheckOperation[] aCheckOperations, Map<String, T> aData, JSONObject rec) throws ValueCheckException {
-        T par;
-        int index = 0;
-        for (String si : asParamNames) {
-            par = (T) rec.get(si);
-            if (!aCheckOperations[index++].operation(par)) {
-                throw new ValueCheckException();
-            }
-            aData.put(si, par);
-        }
+    public Player(JSONObject rec) throws ValueCheckException {
+        sLongParamNames_ = new NameAndDBName[]{new NameAndDBName("yearOfBirth"), new NameAndDBName("id","siteid")};
+        longCheckOperations_ = new CheckOperation[]{check_year_correct, (par) -> true};
+        sDoubleParamNames_ = new NameAndDBName[]{new NameAndDBName("weight"), new NameAndDBName("height")};
+        doubleCheckOperations_ = new CheckOperation[]{(par) -> (Double)par>8. && (Double)par<4086., (par) -> (Double)par>8. && (Double)par<380.};
+        sSParamNames_ = new NameAndDBName[]{new NameAndDBName("dateOfBirth"), new NameAndDBName("lastName"), new NameAndDBName("playerPosition"), new NameAndDBName("playerGameStatus"), new NameAndDBName("firstName")};
+        sCheckOperations_ = new CheckOperation[]{(par) -> ((String)par).length()>8 && ((String)par).length()<12, (par) -> true, (par) -> true, (par) -> true, (par) -> true};
+        init_datalists(rec);
     }
 
-    public Player(JSONObject rec) {
-        bCheck = true;
-        try {
-            longData_ = new HashMap<>();
-            put_and_check(sLongParamNames_,longCheckOperations_,longData_, rec);
-            doubleData_ = new HashMap<>();
-            put_and_check(sDoubleParamNames_,doubleCheckOperations_,doubleData_, rec);
-            sData_ = new HashMap<>();
-            put_and_check(sSParamNames_,sCheckOperations_,sData_, rec);
-        }
-        catch (ClassCastException e) {
-            e.printStackTrace();
-            bCheck = false;
-        } catch (ValueCheckException e) {
-            e.printStackTrace();
-            bCheck = false;
-        }
-
-    }
-
-    public void parse(DBCollection tablePlayers, Object leagueId) {
+    public void parse(MongoCollection<Document> tablePlayers, Object leagueId, Integer siteid) throws ValueCheckException {
         BasicDBObject document = new BasicDBObject();
-        for (String si : sLongParamNames_) {
-            document.put(si, longData_.get(si));
-        }
-        for (String si : sDoubleParamNames_) {
-            document.put(si, doubleData_.get(si));
-        }
-        for (String si : sSParamNames_) {
-            document.put(si, sData_.get(si));
+        parse(document);
+        JSONParser parser = new JSONParser();
+
+        String s = String.format("http://api.eliteprospects.com/beta/players/%d/stats?filter=league.id%%3D%d",longData_.get("siteid"),siteid);
+        Object obj = parseJSON_init(s);
+        JSONObject jsonObj = (JSONObject) obj;
+        JSONObject jsonObj1 = (JSONObject) jsonObj.get("metadata");
+        long totalCount = (Long) jsonObj1.get("totalCount");
+        if (totalCount < 1) return;
+        JSONArray array = (JSONArray) jsonObj.get("data");
+        Iterator i = array.iterator();
+        List<BasicDBObject> stats = new ArrayList<>();
+        while (i.hasNext()) {
+            Object recobj = i.next();
+            if (recobj instanceof JSONObject) {
+                JSONObject rec = (JSONObject) recobj;
+                PlayerStats playerStats = new PlayerStats(rec);
+                BasicDBObject statDoc = new BasicDBObject();
+                playerStats.parse(statDoc);
+                stats.add(statDoc);
+            }
         }
         document.put("leagueId", leagueId);
+        document.put("stats", stats);
+        UpdateOptions updateOptions = new UpdateOptions();
+        updateOptions.upsert(true);
         BasicDBObject query = new BasicDBObject();
-        query.put("id", longData_.get("id"));
-        tablePlayers.update(query, document, true, false);
+        tablePlayers.updateOne(eq("siteid", longData_.get("siteid")), new Document("$set", document), updateOptions);
     }
+
 }
