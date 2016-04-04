@@ -3,6 +3,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
 import com.mongodb.WriteResult;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.UpdateOptions;
@@ -37,7 +38,11 @@ public class League extends com.player_regression.core.Parser {
         siteid_ = siteid0;
     }
 
-    public void parse(MongoCollection<Document> tableLeagues, MongoCollection<Document> tablePlayers) {
+    public League(Integer siteid0) {
+        siteid_ = siteid0;
+    }
+
+    public void parse(MongoCollection<Document> tableLeagues, MongoCollection<Document> tablePlayers, int iOffset, int iLimit) {
         BasicDBObject query = new BasicDBObject();
         query.put("siteid", siteid_);
         BasicDBObject document = new BasicDBObject();
@@ -48,8 +53,6 @@ public class League extends com.player_regression.core.Parser {
         Object leagueId = tableLeagues.findOneAndUpdate(document, new Document("$set", document), updateOptions).get("_id");
 
         JSONParser parser = new JSONParser();
-        final int iLimit = 3;
-        int iOffset = 0;
 
         Object obj = parseJSON_init(String.format("http://api.eliteprospects.com:80/beta/leagues/%d/players?limit=%d&offset=%d",siteid_,iLimit,iOffset));
         JSONObject jsonObj = (JSONObject) obj;
@@ -71,5 +74,25 @@ public class League extends com.player_regression.core.Parser {
                 }
             }
         }
+    }
+
+    public void get_from_db(MongoCollection<Document> tableLeagues, MongoCollection<Document> tablePlayers) {
+        FindIterable<Document> result = tableLeagues.find(key());
+        for (Document res : result) {
+            Object leagueId = res.get("_id");
+            FindIterable<Document> resultPlayers = tablePlayers.find(eq("leagueId",leagueId));
+            for (Document resPlayer : resultPlayers) {
+                Player player = new Player();
+                player.get_from_db(resPlayer);
+            }
+            return; //one step
+        }
+    }
+
+    private Document key() {
+        Document request = new Document();
+        request.append("siteid", siteid_);
+        request.append("name", name_);
+        return request;
     }
 }

@@ -43,13 +43,17 @@ class ValueCheckException  extends Exception {
 
 class Player extends ParserWithDataLists {
 
-    public Player(JSONObject rec) throws ValueCheckException {
+    public Player() {
         sLongParamNames_ = new NameAndDBName[]{new NameAndDBName("yearOfBirth"), new NameAndDBName("id","siteid")};
         longCheckOperations_ = new CheckOperation[]{check_year_correct, (par) -> true};
         sDoubleParamNames_ = new NameAndDBName[]{new NameAndDBName("weight"), new NameAndDBName("height")};
         doubleCheckOperations_ = new CheckOperation[]{(par) -> (Double)par>8. && (Double)par<4086., (par) -> (Double)par>8. && (Double)par<380.};
         sSParamNames_ = new NameAndDBName[]{new NameAndDBName("dateOfBirth"), new NameAndDBName("lastName"), new NameAndDBName("playerPosition"), new NameAndDBName("playerGameStatus"), new NameAndDBName("firstName")};
         sCheckOperations_ = new CheckOperation[]{(par) -> ((String)par).length()>8 && ((String)par).length()<12, (par) -> true, (par) -> true, (par) -> true, (par) -> true};
+    }
+
+    public Player(JSONObject rec) throws ValueCheckException {
+        super();
         init_datalists(rec);
     }
 
@@ -82,7 +86,25 @@ class Player extends ParserWithDataLists {
         UpdateOptions updateOptions = new UpdateOptions();
         updateOptions.upsert(true);
         BasicDBObject query = new BasicDBObject();
-        tablePlayers.updateOne(eq("siteid", longData_.get("siteid")), new Document("$set", document), updateOptions);
+        BasicDBObject keyDocument = key();
+        tablePlayers.updateOne(keyDocument, new Document("$set", document), updateOptions);
     }
 
+    private BasicDBObject key() {
+        BasicDBObject document = new BasicDBObject();
+        document.put("name", longData_.get("siteid"));
+        document.put("firstName", sData_.get("firstName"));
+        document.put("secondName", sData_.get("secondName"));
+        return document;
+    }
+
+    public void get_from_db(Document player) {
+        get_datalists_from_db(player);
+        List stats = (List) player.get("stats");
+        for (Object objstat : stats) {
+            Document stat = (Document) objstat;
+            PlayerStats playerStats = new PlayerStats();
+            playerStats.get_datalists_from_db(stat);
+        }
+    }
 }

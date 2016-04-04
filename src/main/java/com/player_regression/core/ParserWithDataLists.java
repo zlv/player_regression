@@ -1,6 +1,7 @@
 package com.player_regression.core;
 
 import com.mongodb.BasicDBObject;
+import org.bson.Document;
 import org.json.simple.JSONObject;
 
 import java.util.HashMap;
@@ -27,6 +28,18 @@ class ParserWithDataLists extends com.player_regression.core.Parser {
         longData_ = new HashMap<>();
         doubleData_ = new HashMap<>();
         sData_ = new HashMap<>();
+    }
+
+    void get_datalists_from_db(Document document) {
+        for (NameAndDBName si : sLongParamNames_) {
+            longData_.put(si.dbname(), (Long) document.get(si.dbname()));
+        }
+        for (NameAndDBName si : sDoubleParamNames_) {
+            doubleData_.put(si.dbname(), (Double) document.get(si.dbname()));
+        }
+        for (NameAndDBName si : sSParamNames_) {
+            sData_.put(si.dbname(), (String) document.get(si.dbname()));
+        }
     }
 
     protected void init_datalists(JSONObject rec) throws ValueCheckException {
