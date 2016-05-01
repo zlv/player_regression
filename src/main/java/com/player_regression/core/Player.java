@@ -107,4 +107,10 @@ class Player extends ParserWithDataLists {
             playerStats.get_datalists_from_db(stat);
         }
     }
+
+    public Object json() {
+JSONObject obj = new JSONObject();
+json(obj);
+        return obj;
+    }
 }

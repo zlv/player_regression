@@ -54,6 +54,17 @@ class ParserWithDataLists extends com.player_regression.core.Parser {
         }
     }
 
+    protected void json(JSONObject rec) {
+        try {
+            json(sLongParamNames_,longCheckOperations_,longData_, rec);
+            json(sDoubleParamNames_,doubleCheckOperations_,doubleData_, rec);
+            json(sSParamNames_,sCheckOperations_,sData_, rec);
+        }
+        catch (ClassCastException e) {
+            e.printStackTrace();
+            bCheck = false;
+        }
+    }
     <T> T rec_get(JSONObject rec, String s) {
         String[] slist = s.split("\\.");
 
@@ -63,6 +74,12 @@ class ParserWithDataLists extends com.player_regression.core.Parser {
         }
         return (T) rec.get(slist[i]);
 
+    }
+
+    protected <T> void json(final NameAndDBName[] asParamNames, final CheckOperation[] aCheckOperations, Map<String, T> aData, JSONObject rec) {
+        for (NameAndDBName si : asParamNames) {
+            rec.put(si.dbname(),aData.get(si.dbname()));
+        }
     }
 
     protected <T> void put_and_check(final NameAndDBName[] asParamNames, final CheckOperation[] aCheckOperations, Map<String, T> aData, JSONObject rec) throws ValueCheckException {

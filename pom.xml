@@ -61,7 +61,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.player_regression.core.App</mainClass>
+                            <mainClass>com.player_regression.core.TCPServer</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -33,6 +34,7 @@ public class League extends com.player_regression.core.Parser {
     ////
     String name_;
     Integer siteid_;
+    ArrayList<Player> players_;
     public League(String name0, Integer siteid0) {
         name_ = name0;
         siteid_ = siteid0;
@@ -68,6 +70,7 @@ public class League extends com.player_regression.core.Parser {
                 try {
                     Player player = new Player(rec);
                     player.parse(tablePlayers, leagueId, siteid_);
+                    players_.add(player);
                 } catch (ValueCheckException e) {
                     System.out.println("Can't add record");
                     e.print_info();
@@ -84,6 +87,7 @@ public class League extends com.player_regression.core.Parser {
             for (Document resPlayer : resultPlayers) {
                 Player player = new Player();
                 player.get_from_db(resPlayer);
+                players_.add(player);
             }
             return; //one step
         }
@@ -94,5 +98,15 @@ public class League extends com.player_regression.core.Parser {
         request.append("siteid", siteid_);
         request.append("name", name_);
         return request;
+    }
+
+    public String json() {
+        JSONArray list = new JSONArray();
+        JSONObject obj = new JSONObject();
+        for (Player player : players_) {
+            list.add(player.json());
+        }
+        obj.put("data", list);
+        return obj.toJSONString();
     }
 }
