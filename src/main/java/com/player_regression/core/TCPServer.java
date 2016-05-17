@@ -53,11 +53,12 @@ public class TCPServer extends Thread {
         running = true;
 
         try {
-            System.out.println("S: Connecting...");
+
+            //System.out.println("S: Connecting...");
             System.out.println(message());
 
             //create a server socket. A server socket waits for requests to come in over the network.
-            ServerSocket serverSocket = new ServerSocket(SERVERPORT);
+            /*ServerSocket serverSocket = new ServerSocket(SERVERPORT);
 
             //create client socket... the method accept() listens for a connection to be made to this socket and accepts it.
             Socket client = serverSocket.accept();
@@ -88,7 +89,7 @@ public class TCPServer extends Thread {
             } finally {
                 client.close();
                 System.out.println("S: Done.");
-            }
+            }*/
 
         } catch (Exception e) {
             System.out.println("S: Error");

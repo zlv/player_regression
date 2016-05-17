@@ -84,6 +84,7 @@ public class League extends com.player_regression.core.Parser {
         for (Document res : result) {
             Object leagueId = res.get("_id");
             FindIterable<Document> resultPlayers = tablePlayers.find(eq("leagueId",leagueId));
+            players_ = new ArrayList<>();
             for (Document resPlayer : resultPlayers) {
                 Player player = new Player();
                 player.get_from_db(resPlayer);
