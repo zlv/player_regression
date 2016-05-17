@@ -42,6 +42,7 @@ class ValueCheckException  extends Exception {
 }
 
 class Player extends ParserWithDataLists {
+    ArrayList<PlayerStats> playerStats_;
 
     public Player() {
         sLongParamNames_ = new NameAndDBName[]{new NameAndDBName("yearOfBirth"), new NameAndDBName("id","siteid")};
@@ -53,7 +54,7 @@ class Player extends ParserWithDataLists {
     }
 
     public Player(JSONObject rec) throws ValueCheckException {
-        super();
+        this();
         init_datalists(rec);
     }
 
@@ -71,6 +72,7 @@ class Player extends ParserWithDataLists {
         JSONArray array = (JSONArray) jsonObj.get("data");
         Iterator i = array.iterator();
         List<BasicDBObject> stats = new ArrayList<>();
+        playerStats_ = new ArrayList<PlayerStats>();
         while (i.hasNext()) {
             Object recobj = i.next();
             if (recobj instanceof JSONObject) {
@@ -79,6 +81,7 @@ class Player extends ParserWithDataLists {
                 BasicDBObject statDoc = new BasicDBObject();
                 playerStats.parse(statDoc);
                 stats.add(statDoc);
+                playerStats_.add(playerStats);
             }
         }
         document.put("leagueId", leagueId);
@@ -101,16 +104,39 @@ class Player extends ParserWithDataLists {
     public void get_from_db(Document player) {
         get_datalists_from_db(player);
         List stats = (List) player.get("stats");
+        playerStats_ = new ArrayList<PlayerStats>();
         for (Object objstat : stats) {
             Document stat = (Document) objstat;
-            PlayerStats playerStats = new PlayerStats();
-            playerStats.get_datalists_from_db(stat);
+            PlayerStats playerStat = new PlayerStats();
+            playerStat.get_datalists_from_db(stat);
+            playerStats_.add(playerStat);
         }
     }
 
     public Object json() {
-JSONObject obj = new JSONObject();
-json(obj);
+        JSONObject obj = new JSONObject();
+        json(obj);
         return obj;
+    }
+
+    public int par_number() {
+        return 3;
+    }
+
+    public void copy_parameters_to(double[] doubles) {
+        int index = 0;
+        doubles[index++] = longData_.get("yearOfBirth");
+        doubles[index++] = doubleData_.get("weight");
+        doubles[index++] = doubleData_.get("height");
+    }
+
+    public double price() {
+        double sum = 0.;
+        if (playerStats_==null)
+            return sum;
+        for (PlayerStats p : playerStats_) {
+            sum += p.price();
+        }
+        return sum;
     }
 }

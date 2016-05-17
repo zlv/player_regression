@@ -14,7 +14,22 @@ class PlayerStats extends ParserWithDataLists {
     }
 
     public PlayerStats(JSONObject rec) throws ValueCheckException {
-        super();
+        this();
         init_datalists(rec);
+    }
+
+    public double price() {
+        String svalues[] = {"G","A"};
+        Long values[] = new Long[2];
+        int index = 0;
+        Long sum = Long.valueOf(0);
+        for (String s : svalues) {
+            Long v = longData_.get(s);
+            if (v==null)
+                v = Long.valueOf(0);
+            values[index] = v;
+            sum += values[index++];
+        }
+        return sum;
     }
 }

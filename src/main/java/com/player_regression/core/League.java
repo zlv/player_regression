@@ -7,6 +7,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.UpdateOptions;
+import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
 import org.bson.BsonString;
 import org.bson.Document;
 import org.json.simple.JSONArray;
@@ -63,6 +64,7 @@ public class League extends com.player_regression.core.Parser {
         if (totalCount < 1) return;
         JSONArray array = (JSONArray) jsonObj.get("data");
         Iterator i = array.iterator();
+        players_ = new ArrayList<>();
         while (i.hasNext()) {
             Object recobj = i.next();
             if (recobj instanceof JSONObject) {
@@ -109,5 +111,38 @@ public class League extends com.player_regression.core.Parser {
         }
         obj.put("data", list);
         return obj.toJSONString();
+    }
+
+    public void count_regression() {
+
+        double[] y = new double[players_.size()];
+        double[][] x = new double[players_.size()][];
+        for (int i=0; i<players_.size(); ++i) {
+            Player current = players_.get(i);
+            x[i] = new double[current.par_number()];
+            current.copy_parameters_to(x[i]);
+            y[i] = current.price();
+            System.out.println(current);
+        }
+        OLSMultipleLinearRegression regression = new OLSMultipleLinearRegression();
+        regression.newSampleData(y, x);
+        double[] regressionParameters = regression.estimateRegressionParameters();
+        for (int i=0; i<regressionParameters.length; ++i) {
+            System.out.println(regressionParameters[i]);
+        }
+        System.out.println();
+        double[][] sampleParameters = new double[3][];
+        int index = 0;
+        sampleParameters[index++] = new double[]{1.,1.,2.,2.,124995.0};
+        sampleParameters[index++] = new double[]{1.,1.,4.,0.,349950.0};
+        sampleParameters[index++] = new double[]{1.,7.,7.,1.,-0.0};
+        for (int j=0; j<sampleParameters.length; ++j) {
+            double price = 0;
+            for (int i = 0; i < regressionParameters.length; ++i) {
+                price += sampleParameters[j][i]*regressionParameters[i];
+            }
+            System.out.println(" " + price);
+        }
+        System.out.println();
     }
 }

@@ -101,22 +101,25 @@ public class TCPServer extends Thread {
     public String message() {
         Integer id = 192;
         String name = "KHL";
-        //get_data_from_api("http://api.eliteprospects.com/beta/leagues?limit=1&offset=0&filter=id%3D" + id.toString(),id);
-        return get_league_data_from_db(id,name);
+        //get_data_from_api(id,name);
+        League league = get_league_data(id,name);
+        league.count_regression();
+        return league.json();
     }
 
     public interface OnMessageReceived {
         public void messageReceived(String message);
     }
 
-    void get_data_from_api(String sapi, Integer id) {
+    League get_league_data(Integer id, String name) {
         try {
+            String sapi = "http://api.eliteprospects.com/beta/leagues?limit=1&offset=0&filter=id%3D" + id.toString();
             Parser parser = new Parser();
             Object obj = parser.parseJSON_init(sapi);
             JSONObject jsonObj = (JSONObject) obj;
             JSONObject jsonObj1 = (JSONObject) jsonObj.get("metadata");
             long totalCount = (Long) jsonObj1.get("totalCount");
-            if (totalCount < 1) return;
+            if (totalCount < 1) return null;
             JSONArray array = (JSONArray) jsonObj.get("data");
             Iterator i = array.iterator();
 
@@ -131,7 +134,8 @@ public class TCPServer extends Thread {
                     JSONObject rec = (JSONObject) recobj;
                     String v = (String)rec.get("name");
                     League league = new League(v,id);
-                    league.parse(tableLeagues,tablePlayers, 30, 10);
+                    league.parse(tableLeagues,tablePlayers, 30, 40);
+                    return league;
                 }
             }
         } catch (MongoException e) {
@@ -140,23 +144,8 @@ public class TCPServer extends Thread {
             System.out.println(cce);
         }
 
+        return null;
     }
 
-    private String get_league_data_from_db(Integer id, String name) {
-        try {
-            MongoClient mongo = new MongoClient("localhost", 27017);
-            MongoDatabase db = mongo.getDatabase("player_regression_db");
-            MongoCollection<Document> tableLeagues = db.getCollection("leagues");
-            MongoCollection<Document> tablePlayers = db.getCollection("players");
-            League league = new League(name,id);
-            league.get_from_db(tableLeagues,tablePlayers);
-            return league.json();
-        } catch (MongoException e) {
-            e.printStackTrace();
-        } catch (ClassCastException cce) {
-            System.out.println(cce);
-        }
-        return "";
-    }
 }
 
