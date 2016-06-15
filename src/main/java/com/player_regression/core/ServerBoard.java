@@ -9,7 +9,7 @@ public class ServerBoard {
     public ServerBoard() {
 
         //creates the object OnMessageReceived asked by the TCPServer constructor
-        mServer = new TCPServer(new TCPServer.OnMessageReceived() {
+        mServer = new TCPServerBDProxy(new TCPServer.OnMessageReceived() {
             @Override
             //this method declared in the interface from TCPServer class is implemented here
             //this method is actually a callback method, because it will run every time when it will be called from

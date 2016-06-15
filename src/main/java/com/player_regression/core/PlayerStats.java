@@ -16,7 +16,11 @@ class PlayerStats extends ParserWithDataLists {
     public PlayerStats(JSONObject rec) throws ValueCheckException {
         this();
         init_datalists(rec);
-    }
+    }1.0 1985.0 65.0 170.0 8.758906439165418
+            1.0 2000.0 65.0 170.0 2.203132472773138
+            1.0 1989.0 69.0 175.0 5.909598257282791
+            1.0 1993.0 79.0 195.0 0.05923837625845607
+            1.0 1983.0 79.0 195.0 4.429754353853234
 
     public double price() {
         String svalues[] = {"G","A"};

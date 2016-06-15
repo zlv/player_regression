@@ -134,9 +134,13 @@ class Player extends ParserWithDataLists {
         double sum = 0.;
         if (playerStats_==null)
             return sum;
+        int count = 0;
         for (PlayerStats p : playerStats_) {
             sum += p.price();
+            ++count;
         }
-        return sum;
+        if (count==0)
+            return sum;
+        return sum/count;
     }
 }

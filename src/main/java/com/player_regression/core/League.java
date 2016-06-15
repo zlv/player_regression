@@ -113,6 +113,16 @@ public class League extends com.player_regression.core.Parser {
         return obj.toJSONString();
     }
 
+    static String string_parameters(double[] x) {
+        String result="";
+        int j;
+        for (j = 0; j < x.length-1; ++j) {
+            result+=(new Double(x[j])).toString() + " ";
+        }
+        result+=(new Double(x[j])).toString();
+        return result;
+    }
+
     public void count_regression() {
 
         double[] y = new double[players_.size()];
@@ -123,6 +133,7 @@ public class League extends com.player_regression.core.Parser {
             current.copy_parameters_to(x[i]);
             y[i] = current.price();
             System.out.println(current);
+            System.out.println(string_parameters(x[i])+ " " + y[i]);
         }
         OLSMultipleLinearRegression regression = new OLSMultipleLinearRegression();
         regression.newSampleData(y, x);
@@ -131,17 +142,19 @@ public class League extends com.player_regression.core.Parser {
             System.out.println(regressionParameters[i]);
         }
         System.out.println();
-        double[][] sampleParameters = new double[3][];
+        double[][] sampleParameters = new double[5][];
         int index = 0;
-        sampleParameters[index++] = new double[]{1.,1.,2.,2.,124995.0};
-        sampleParameters[index++] = new double[]{1.,1.,4.,0.,349950.0};
-        sampleParameters[index++] = new double[]{1.,7.,7.,1.,-0.0};
+        sampleParameters[index++] = new double[]{1,1985,65,170};
+        sampleParameters[index++] = new double[]{1,2000,65,170};
+        sampleParameters[index++] = new double[]{1,1989,69,175};
+        sampleParameters[index++] = new double[]{1,1993,79,195};
+        sampleParameters[index++] = new double[]{1,1983,79,195};
         for (int j=0; j<sampleParameters.length; ++j) {
             double price = 0;
             for (int i = 0; i < regressionParameters.length; ++i) {
                 price += sampleParameters[j][i]*regressionParameters[i];
             }
-            System.out.println(" " + price);
+            System.out.println(string_parameters(sampleParameters[j])+ " " + price);
         }
         System.out.println();
     }
